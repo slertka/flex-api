@@ -1,0 +1,11 @@
+language: node_js
+node_js: node
+services:
+- mongodb
+deploy:
+  provider: heroku
+  api_key:
+    secure: boYGyLQKAowKfHOFdim7mNkoZ1gzbOrBaUuZtGUSDDU38XKPSSv8vpz34kg5cvh4LlYfbb1CUKFPk6DJWiQ4OJZPkf3l5FTXqMbluwDw9qSGWYk1OPfY7cxf1+UV2cgGB8N+amiJrqAJykpZt3amyCKdWBQboWXHWOaT0YkZL0GIL/l8Rlp2mK0Oedjm3D+kxMpVavCWNAvmSdYNuo6PRp6zFiqlh0Fgom1ZjI4bMsMcY/S0NMSiNefpn/Ax+dGeO+9cJIEvWsLGizESL+i1J6w8q2fG2IuMf3H5feBhNTC6vblAeWYXwvRWn/BZ6PLKPGEgIrO/rrYEjNjG+Bxv1dE6l3X3wx50lgJEsxcabMiWp9TsOO7mz5ljodqOQJ5Uxda0AGPNkAzNGRAFMi7ufEH5hszfFMITHRe0zOW1MoeNg8vYYYQLu2A0c/wtcuVzAD8hdF9Rw5W7q0nSgDEJWho/whjaB0/KROmh5ADyntTpchbAVLOG8M+gsLF2B1OmvOd2lI+axWBOrQC+3lXGTBmk63t3wOJwqcJdtrtv2dsr9zh8s5KSzps60FoioBOiQTxHFyPsMCnh1FP5JbpjzNflBHywjXRrTKKEjpB3XusKGKEOwRY32FnOFyYs9FD1DUxk8EtmUmydBTDvW28eUknw0gWVpiE862M/GN/wr30=
+  app: nameless-springs-58654
+  on:
+    repo: slertka/flex-api
