@@ -16,22 +16,137 @@ router.post("/signup", (req, res) => {
     password,
     confirmPass
   } = req.body;
-  console.log(req.body);
 
-  // Verify input fields are strings
-  const stringFields = [
-    type,
-    studio,
-    firstName,
-    lastName,
-    email,
-    password,
-    confirmPass
+  const fields = [
+    "type",
+    "studio",
+    "firstName",
+    "lastName",
+    "email",
+    "password",
+    "confirmPass"
   ];
 
-  return User.find({ email })
-    .countDocuments(num => {
-      if (num !== 0) {
+  // Verify all fields are complete
+  const emptyField = fields.find(field => {
+    return !(field in req.body);
+  });
+  if (emptyField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Missing value in required field",
+      location: emptyField
+    });
+  }
+
+  // Verify input fields are strings
+  const nonStringField = fields.find(field => {
+    return field in req.body && typeof req.body[field] !== "string";
+  });
+  if (nonStringField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Input must be a variable type 'String'",
+      location: nonStringField
+    });
+  }
+
+  // Verify user profile type is instructor or studio
+  if (type !== ("instructor" || "studio")) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "User type must be instructor or studio",
+      location: "type"
+    });
+  }
+
+  // Verify email looks like an email
+  const re = /\S+@\S+\.\S+/;
+  if (!re.test(email)) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Invalid email entered",
+      location: "email"
+    });
+  }
+
+  // Verify fields are trimmed
+  const nonTrimmedField = fields.find(
+    field => req.body[field] !== req.body[field].trim()
+  );
+  if (nonTrimmedField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Cannot start or end with whitespace",
+      location: nonStringField
+    });
+  }
+
+  // Verify passwords meet minimum & maximum requirements
+  const requiredLengths = {
+    type: {
+      min: 1
+    },
+    email: {
+      min: 1
+    },
+    studio: {
+      min: 1
+    },
+    firstName: {
+      min: 1
+    },
+    lastName: {
+      min: 1
+    },
+    password: {
+      min: 8,
+      max: 72
+    }
+  };
+  const fieldTooSmall = Object.keys(requiredLengths).find(
+    field =>
+      "min" in requiredLengths[field] &&
+      req.body[field].trim().length < requiredLengths[field].min
+  );
+  const fieldTooLarge = Object.keys(requiredLengths).find(
+    field =>
+      "max" in requiredLengths[field] &&
+      req.body[field].length > requiredLengths[field].max
+  );
+  if (fieldTooSmall || fieldTooLarge) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: fieldTooSmall
+        ? `Must be at least ${
+            requiredLengths[fieldTooSmall].min
+          } character(s) long`
+        : `Must be less than ${
+            requiredLengths[fieldTooLarge].max
+          } characters long`,
+      location: fieldTooSmall || fieldTooLarge
+    });
+  }
+
+  // Verify passwords match
+  if (password !== confirmPass) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Passwords do not match",
+      location: "password"
+    });
+  }
+
+  return User.findOne({ email })
+    .then(user => {
+      if (user) {
         return Promise.reject({
           code: 422,
           reason: "ValidationError",
@@ -39,11 +154,9 @@ router.post("/signup", (req, res) => {
           location: "email"
         });
       }
-      console.log(password);
       return User.hashPassword(password);
     })
     .then(hash => {
-      console.log(hash);
       return User.create({
         email,
         password: hash,
