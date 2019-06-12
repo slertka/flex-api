@@ -3,6 +3,16 @@ const router = express.Router();
 const bodyParser = require("body-parser");
 const { User } = require("../models/user");
 
+// JWT
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET, JWT_EXPIRY } = require("../../config");
+const createAuthToken = payload => {
+  return jwt.sign({ payload }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRY,
+    algorithm: "HS256"
+  });
+};
+
 router.use(express.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 
@@ -166,9 +176,13 @@ router.post("/signup", (req, res) => {
         type
       });
     })
-    .then(user => {
-      console.log(user.serialize());
-      return res.status(201).json(user.serialize());
+    .then(_user => {
+      const jwt = createAuthToken(email);
+      const user = _user.serialize();
+      return res.status(201).json({
+        user,
+        jwt
+      });
     })
     .catch(err => {
       if (err.reason == "ValidationError") {
