@@ -64,7 +64,7 @@ router.post("/signup", (req, res) => {
   }
 
   // Verify user profile type is instructor or studio
-  if (type !== ("instructor" || "studio")) {
+  if (type === "studio" && type === "instructor") {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
@@ -97,23 +97,8 @@ router.post("/signup", (req, res) => {
     });
   }
 
-  // Verify passwords meet minimum & maximum requirements
+  // Verify password meet minimum & maximum requirements
   const requiredLengths = {
-    type: {
-      min: 1
-    },
-    email: {
-      min: 1
-    },
-    studio: {
-      min: 1
-    },
-    firstName: {
-      min: 1
-    },
-    lastName: {
-      min: 1
-    },
     password: {
       min: 8,
       max: 72
@@ -190,6 +175,13 @@ router.post("/signup", (req, res) => {
       }
       return res.status(500).json({ message: "Internal Server Error" });
     });
+});
+
+// const localAuth = passport.authenticate("local", { session: false });
+router.post("/login", (req, res) => {
+  const email = req.user.username;
+  const jwt = createAuthToken(email);
+  return res.json({ jwt, email });
 });
 
 module.exports = { router };
