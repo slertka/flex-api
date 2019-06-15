@@ -178,8 +178,8 @@ router.post("/signup", (req, res) => {
       });
     })
     .then(_user => {
-      const jwt = createAuthToken(email);
-      const user = _user.serialize();
+      let jwt = createAuthToken(email);
+      let user = _user.serialize();
       return res.status(201).json({
         user,
         jwt
@@ -195,9 +195,9 @@ router.post("/signup", (req, res) => {
 
 const localAuth = passport.authenticate("local", { session: false });
 router.post("/login", localAuth, (req, res) => {
-  console.log(req.user);
-  const authToken = createAuthToken(req.user.serialize);
-  return res.json({ authToken });
+  // find User, serialize, then pass data in res.json()
+  jwt = createAuthToken(req.user);
+  return res.json({ jwt });
 });
 
 module.exports = { router };
