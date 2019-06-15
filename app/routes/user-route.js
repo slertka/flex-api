@@ -1,7 +1,11 @@
 const express = require("express");
+const passport = require("passport");
 const router = express.Router();
 const bodyParser = require("body-parser");
 const { User } = require("../models/user");
+
+router.use(express.json());
+router.use(bodyParser.urlencoded({ extended: true }));
 
 // JWT
 const jwt = require("jsonwebtoken");
@@ -12,9 +16,6 @@ const createAuthToken = payload => {
     algorithm: "HS256"
   });
 };
-
-router.use(express.json());
-router.use(bodyParser.urlencoded({ extended: true }));
 
 router.post("/signup", (req, res) => {
   const {
@@ -190,6 +191,13 @@ router.post("/signup", (req, res) => {
       }
       return res.status(500).json({ message: "Internal Server Error" });
     });
+});
+
+const localAuth = passport.authenticate("local", { session: false });
+router.post("/login", localAuth, (req, res) => {
+  console.log(req.user);
+  const authToken = createAuthToken(req.user.serialize);
+  return res.json({ authToken });
 });
 
 module.exports = { router };

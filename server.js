@@ -5,6 +5,7 @@ const app = express();
 
 // Mongoose
 const mongoose = require("mongoose");
+mongoose.Promise = global.Promise;
 
 // Log Requests
 const morgan = require("morgan");
@@ -20,6 +21,12 @@ app.use(
     origin: CLIENT_ORIGIN
   })
 );
+
+// Auth Strategies
+const passport = require("passport");
+const { localStrategy, jwtStrategy } = require("./app/strategies/index");
+passport.use(localStrategy);
+// passport.use(jwtStrategy);
 
 // Routers
 const { router: userRouter } = require("./app/routes/user-route");

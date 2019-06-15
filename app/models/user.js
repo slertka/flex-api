@@ -13,7 +13,7 @@ const UserSchema = mongoose.Schema({
 
 UserSchema.methods.serialize = function() {
   return {
-    id: this.id,
+    id: this._id,
     firstName: this.firstName || "",
     type: this.type
   };
