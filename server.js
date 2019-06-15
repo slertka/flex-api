@@ -21,9 +21,18 @@ app.use(
   })
 );
 
+// Passport
+const passport = require("passport");
+const { Strategy: localStrategy } = require("passport-local");
+const { Strategy: jwtStrategy } = require("passport-jwt");
+passport.use(localStrategy);
+passport.use(jwtStrategy);
+
 // Routers
 const { router: userRouter } = require("./app/routes/user-route");
 app.use("/api/user", userRouter);
+const { router: classRouter } = require("./app/routes/class-route");
+app.use("/api/dashboard", classRouter);
 
 // Initialize Server
 let server;
