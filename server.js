@@ -31,6 +31,8 @@ passport.use(localStrategy);
 // Routers
 const { router: userRouter } = require("./app/routes/user-route");
 app.use("/api/user", userRouter);
+const { router: classRouter } = require("./app/routes/class-route");
+app.use("/api/dashboard", classRouter);
 
 // Initialize Server
 let server;
