@@ -18,11 +18,48 @@ router.get("/classes", jwtAuth, (req, res) => {
     .then(classes => res.json(classes));
 });
 
-router.get("/:userId", jwtAuth, (req, res) => {
+router.get("/studio/:userId", jwtAuth, (req, res) => {
   const userId = req.params.userId;
   return Class.find({ postedBy: userId })
     .sort({ datePosted: -1 })
     .then(classes => res.json(classes));
+});
+
+router.put("/class/:classId", jwtAuth, (req, res) => {
+  const { userId } = req.body;
+  const classId = req.params.classId;
+
+  // Verify user hasn't already applied to class
+  return Class.find({ _id: classId }, { userApplied: 1 })
+    .then(_userArr => {
+      const userArr = _userArr[0].userApplied;
+      const userApplied = userArr.find(id => id == userId);
+      if (userApplied) {
+        return Promise.reject({
+          code: 244,
+          reason: "AlreadyApplied",
+          message: "User already applied to this class posting"
+        });
+      }
+      return Class.updateOne(
+        { _id: classId },
+        {
+          $push: {
+            userApplied: userId
+          }
+        }
+      );
+    })
+    .then(_class => Class.findOne({ _id: classId }))
+    .then(_class => {
+      return res.status(201).json(_class);
+    })
+    .catch(err => {
+      if (err.reason === "AlreadyApplied") {
+        return res.status(244).json(err);
+      }
+      console.log(err);
+    });
 });
 
 router.post("/postClass", jwtAuth, (req, res) => {
