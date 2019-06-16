@@ -1,5 +1,5 @@
 const { Strategy: LocalStrategy } = require("passport-local");
-const { Strategy: JwtStrategy, extractJwt } = require("passport-jwt");
+const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 
 const { User } = require("../models/user");
 const { JWT_SECRET } = require("../../config");
@@ -24,7 +24,7 @@ const localStrategy = new LocalStrategy((user, password, cb) => {
           message: "Incorrect username or password"
         });
       }
-      return cb(null, user);
+      return cb(null, authUser);
     })
     .catch(err => {
       if (err.reason === "LoginError") {
@@ -34,4 +34,15 @@ const localStrategy = new LocalStrategy((user, password, cb) => {
     });
 });
 
-module.exports = { localStrategy };
+const jwtStrategy = new JwtStrategy(
+  {
+    secretOrKey: JWT_SECRET,
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    algorithms: ["HS256"]
+  },
+  (payload, done) => {
+    done(null, payload);
+  }
+);
+
+module.exports = { localStrategy, jwtStrategy };

@@ -26,7 +26,7 @@ app.use(
 const passport = require("passport");
 const { localStrategy, jwtStrategy } = require("./app/strategies/index");
 passport.use(localStrategy);
-// passport.use(jwtStrategy);
+passport.use(jwtStrategy);
 
 // Routers
 const { router: userRouter } = require("./app/routes/user-route");

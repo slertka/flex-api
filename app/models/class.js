@@ -8,7 +8,8 @@ const ClassSchema = mongoose.Schema({
   classDateTime: { type: String },
   startDate: { type: Date },
   description: { type: String },
-  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Class" }
+  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Class" },
+  datePosted: { type: Date }
 });
 
 const Class = mongoose.model("Class", ClassSchema);

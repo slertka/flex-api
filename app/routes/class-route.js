@@ -1,4 +1,5 @@
 const express = require("express");
+const passport = require("passport");
 const router = express.Router();
 const bodyParser = require("body-parser");
 
@@ -8,7 +9,23 @@ const { Class } = require("../models/class");
 router.use(express.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 
-router.post("/postClass", (req, res) => {
+// JWT Authentications
+const jwtAuth = passport.authenticate("jwt", { session: false });
+
+router.get("/classes", jwtAuth, (req, res) => {
+  return Class.find({})
+    .sort({ datePosted: -1 })
+    .then(classes => res.json(classes));
+});
+
+router.get("/:userId", jwtAuth, (req, res) => {
+  const userId = req.params.userId;
+  return Class.find({ postedBy: userId })
+    .sort({ datePosted: -1 })
+    .then(classes => res.json(classes));
+});
+
+router.post("/postClass", jwtAuth, (req, res) => {
   const {
     type,
     length,
@@ -16,6 +33,7 @@ router.post("/postClass", (req, res) => {
     classDateDay,
     classDateTime,
     startDate,
+    datePosted,
     description,
     postedBy
   } = req.body;
@@ -27,6 +45,7 @@ router.post("/postClass", (req, res) => {
     "startDate",
     "description",
     "postedBy",
+    "datePosted",
     "length",
     "wage"
   ];
@@ -45,7 +64,7 @@ router.post("/postClass", (req, res) => {
   }
 
   // verify fields that are string types
-  const stringFields = fields.slice(0, 6);
+  const stringFields = fields.slice(0, 7);
   const nonStringField = stringFields.find(field => {
     return field in req.body && typeof req.body[field] !== "string";
   });
@@ -59,7 +78,7 @@ router.post("/postClass", (req, res) => {
   }
 
   // verify fields that are number types
-  const numFields = fields.slice(6, 7);
+  const numFields = fields.slice(7, 9);
   const nonNumField = numFields.find(field => {
     return field in req.body && typeof req.body[field] !== "number";
   });
@@ -77,6 +96,7 @@ router.post("/postClass", (req, res) => {
     length,
     postedBy,
     wage,
+    datePosted,
     classDateDay,
     classDateTime,
     startDate,
