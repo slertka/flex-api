@@ -12,12 +12,14 @@ router.use(bodyParser.urlencoded({ extended: true }));
 // JWT Authentications
 const jwtAuth = passport.authenticate("jwt", { session: false });
 
+// get all classes that are posted
 router.get("/classes", jwtAuth, (req, res) => {
   return Class.find({})
     .sort({ datePosted: -1 })
     .then(classes => res.json(classes));
 });
 
+// get classes associated with a user
 router.get("/studio/:userId", jwtAuth, (req, res) => {
   const userId = req.params.userId;
   return Class.find({ postedBy: userId })
@@ -25,6 +27,7 @@ router.get("/studio/:userId", jwtAuth, (req, res) => {
     .then(classes => res.json(classes));
 });
 
+// update document when user(instructor) applies for a class
 router.put("/class/:classId", jwtAuth, (req, res) => {
   const { userId } = req.body;
   const classId = req.params.classId;
@@ -41,7 +44,9 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
           message: "User already applied to this class posting"
         });
       }
+
       return Class.updateOne(
+        // add user to class "userApplied"
         { _id: classId },
         {
           $push: {
@@ -50,7 +55,18 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
         }
       );
     })
-    .then(_class => Class.findOne({ _id: classId }))
+    .then(() =>
+      User.updateOne(
+        // add class to user "classApplied"
+        { _id: userId },
+        {
+          $push: {
+            classApplied: classId
+          }
+        }
+      )
+    )
+    .then(() => Class.findOne({ _id: classId }))
     .then(_class => {
       return res.status(201).json(_class);
     })
@@ -60,6 +76,13 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
       }
       console.log(err);
     });
+});
+
+router.delete("/class/:classId", jwtAuth, (req, res) => {
+  const classId = req.params.classId;
+  return Class.deleteOne({ _id: classId }).then(() =>
+    res.json(`Class ${classId} deleted`)
+  );
 });
 
 router.post("/postClass", jwtAuth, (req, res) => {
