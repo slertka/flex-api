@@ -3,6 +3,7 @@ const passport = require("passport");
 const router = express.Router();
 const bodyParser = require("body-parser");
 const { User } = require("../models/user");
+const { jwtAuth } = require("./class-route");
 
 router.use(express.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -182,6 +183,11 @@ const localAuth = passport.authenticate("local", { session: false });
 router.post("/login", localAuth, (req, res) => {
   const jwt = createAuthToken(req.user);
   return res.json({ jwt, user: req.user });
+});
+
+router.post("/auth/refresh", jwtAuth, (req, res) => {
+  const jwt = createAuthToken(req.user);
+  return res.json({ jwt });
 });
 
 module.exports = { router };

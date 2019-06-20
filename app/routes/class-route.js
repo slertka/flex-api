@@ -13,9 +13,11 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const jwtAuth = passport.authenticate("jwt", { session: false });
 
 // get all classes that are posted
+// GET Class.find({postedBy: req.user.id}).populate("postedBy").then(_classes => _classes[0].postedBy.studio)
 router.get("/classes", jwtAuth, (req, res) => {
   return Class.find({})
     .sort({ datePosted: -1 })
+    .populate("postedBy")
     .then(classes => res.json(classes));
 });
 
@@ -24,6 +26,8 @@ router.get("/studio/:userId", jwtAuth, (req, res) => {
   const userId = req.params.userId;
   return Class.find({ postedBy: userId })
     .sort({ datePosted: -1 })
+    .populate("postedBy")
+    .populate("userApplied")
     .then(classes => res.json(classes));
 });
 
@@ -39,7 +43,7 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
       const userApplied = userArr.find(id => id == userId);
       if (userApplied) {
         return Promise.reject({
-          code: 244,
+          code: 422,
           reason: "AlreadyApplied",
           message: "User already applied to this class posting"
         });
@@ -72,7 +76,7 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
     })
     .catch(err => {
       if (err.reason === "AlreadyApplied") {
-        return res.status(244).json(err);
+        return res.status(422).json(err);
       }
       console.log(err);
     });
@@ -151,6 +155,19 @@ router.post("/postClass", jwtAuth, (req, res) => {
     });
   }
 
+  // verify number fields is non-zero and non negative
+  const negativeNumInField = numFields.find(field => {
+    return field in req.body && req.body[field] <= 0;
+  });
+  if (negativeNumInField) {
+    return res.status(422).json({
+      code: 422,
+      reasond: "ValidationError",
+      message: "Field must be greater than 0",
+      location: negativeNumInField
+    });
+  }
+
   return Class.create({
     type,
     length,
@@ -163,6 +180,5 @@ router.post("/postClass", jwtAuth, (req, res) => {
     description
   }).then(_class => res.status(201).json(_class));
 });
-// GET Class.find({postedBy: req.user.id}).populate("postedBy").then(_classes => _classes[0].postedBy.studio)
 
-module.exports = { router };
+module.exports = { router, jwtAuth };
