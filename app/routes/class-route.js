@@ -12,12 +12,25 @@ router.use(bodyParser.urlencoded({ extended: true }));
 // JWT Authentications
 const jwtAuth = passport.authenticate("jwt", { session: false });
 
-// get all classes that are posted
+// get all classes that an instructor has not yet applied for
 router.get("/classes/:userId", jwtAuth, (req, res) => {
   const userId = req.params.userId;
   return Class.find({
     userApplied: {
       $nin: userId
+    }
+  })
+    .sort({ datePosted: -1 })
+    .populate("postedBy")
+    .then(classes => res.json(classes));
+});
+
+// get all classes that an instructor has already applied for
+router.get("/applied/:userId", jwtAuth, (req, res) => {
+  const userId = req.params.userId;
+  return Class.find({
+    userApplied: {
+      $in: userId
     }
   })
     .sort({ datePosted: -1 })
