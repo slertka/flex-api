@@ -13,9 +13,13 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const jwtAuth = passport.authenticate("jwt", { session: false });
 
 // get all classes that are posted
-// GET Class.find({postedBy: req.user.id}).populate("postedBy").then(_classes => _classes[0].postedBy.studio)
-router.get("/classes", jwtAuth, (req, res) => {
-  return Class.find({})
+router.get("/classes/:userId", jwtAuth, (req, res) => {
+  const userId = req.params.userId;
+  return Class.find({
+    userApplied: {
+      $nin: userId
+    }
+  })
     .sort({ datePosted: -1 })
     .populate("postedBy")
     .then(classes => res.json(classes));
