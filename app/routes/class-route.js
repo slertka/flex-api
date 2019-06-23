@@ -48,8 +48,100 @@ router.get("/studio/:userId", jwtAuth, (req, res) => {
     .then(classes => res.json(classes));
 });
 
+router.post("/postClass", jwtAuth, (req, res) => {
+  const {
+    type,
+    length,
+    wage,
+    classDateDay,
+    classDateTime,
+    startDate,
+    datePosted,
+    description,
+    postedBy
+  } = req.body;
+
+  const fields = [
+    "type",
+    "classDateDay",
+    "classDateTime",
+    "startDate",
+    "description",
+    "postedBy",
+    "datePosted",
+    "length",
+    "wage"
+  ];
+
+  // check all fields are in request body
+  const missingField = fields.find(field => {
+    return !(field in req.body);
+  });
+  if (missingField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Missing field in request body to complete request",
+      location: missingField
+    });
+  }
+
+  // verify fields that are string types
+  const stringFields = fields.slice(0, 7);
+  const nonStringField = stringFields.find(field => {
+    return field in req.body && typeof req.body[field] !== "string";
+  });
+  if (nonStringField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Field must be a string",
+      location: nonStringField
+    });
+  }
+
+  // verify fields that are number types
+  const numFields = fields.slice(7, 9);
+  const nonNumField = numFields.find(field => {
+    return field in req.body && typeof req.body[field] !== "number";
+  });
+  if (nonNumField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Field must be a number",
+      location: nonNumField
+    });
+  }
+
+  // verify number fields is non-zero and non negative
+  const negativeNumInField = numFields.find(field => {
+    return field in req.body && req.body[field] <= 0;
+  });
+  if (negativeNumInField) {
+    return res.status(422).json({
+      code: 422,
+      reasond: "ValidationError",
+      message: "Field must be greater than 0",
+      location: negativeNumInField
+    });
+  }
+
+  return Class.create({
+    type,
+    length,
+    postedBy,
+    wage,
+    datePosted,
+    classDateDay,
+    classDateTime,
+    startDate,
+    description
+  }).then(_class => res.status(201).json(_class));
+});
+
 // update document when user(instructor) applies for a class
-router.put("/class/:classId", jwtAuth, (req, res) => {
+router.put("/class/apply/:classId", jwtAuth, (req, res) => {
   const { userId } = req.body;
   const classId = req.params.classId;
 
@@ -99,6 +191,32 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
     });
 });
 
+// update document when user(instructor) withdraws from a class
+router.put("/class/withdraw/:classId", jwtAuth, (req, res) => {
+  const classId = req.params.classId;
+  const { userId } = req.body;
+
+  return Class.updateOne(
+    { _id: classId },
+    {
+      $pull: {
+        userApplied: userId
+      }
+    }
+  ).then(() => {
+    return User.updateOne(
+      { _id: userId },
+      {
+        $pull: {
+          classApplied: classId
+        }
+      }
+    )
+      .then(() => Class.findOne({ _id: classId }))
+      .then(_class => res.json(_class));
+  });
+});
+
 // edit class listing
 router.put("/edit/:classId", jwtAuth, (req, res) => {
   const classId = req.params.classId;
@@ -130,7 +248,7 @@ router.put("/edit/:classId", jwtAuth, (req, res) => {
     return !(field in req.body);
   });
   if (missingField) {
-    return res.status(244).json({
+    return res.status(422).json({
       code: 422,
       reason: "ValidationError",
       message: "Missing field in request body to complete request",
@@ -144,7 +262,7 @@ router.put("/edit/:classId", jwtAuth, (req, res) => {
     return field in req.body && typeof req.body[field] !== "string";
   });
   if (nonStringField) {
-    return res.status(244).json({
+    return res.status(422).json({
       code: 422,
       reason: "ValidationError",
       message: "Field must be a string",
@@ -196,7 +314,7 @@ router.put("/edit/:classId", jwtAuth, (req, res) => {
     .then(res => {
       if (res.nModified === 0 && res.n === 0) {
         return Promise.reject({
-          code: 244,
+          code: 422,
           reason: "ValidationError",
           message: "Document could not be updated"
         });
@@ -217,98 +335,6 @@ router.delete("/class/:classId", jwtAuth, (req, res) => {
   return Class.deleteOne({ _id: classId }).then(() =>
     res.json(`Class ${classId} deleted`)
   );
-});
-
-router.post("/postClass", jwtAuth, (req, res) => {
-  const {
-    type,
-    length,
-    wage,
-    classDateDay,
-    classDateTime,
-    startDate,
-    datePosted,
-    description,
-    postedBy
-  } = req.body;
-
-  const fields = [
-    "type",
-    "classDateDay",
-    "classDateTime",
-    "startDate",
-    "description",
-    "postedBy",
-    "datePosted",
-    "length",
-    "wage"
-  ];
-
-  // check all fields are in request body
-  const missingField = fields.find(field => {
-    return !(field in req.body);
-  });
-  if (missingField) {
-    return res.status(244).json({
-      code: 422,
-      reason: "ValidationError",
-      message: "Missing field in request body to complete request",
-      location: missingField
-    });
-  }
-
-  // verify fields that are string types
-  const stringFields = fields.slice(0, 7);
-  const nonStringField = stringFields.find(field => {
-    return field in req.body && typeof req.body[field] !== "string";
-  });
-  if (nonStringField) {
-    return res.status(244).json({
-      code: 422,
-      reason: "ValidationError",
-      message: "Field must be a string",
-      location: nonStringField
-    });
-  }
-
-  // verify fields that are number types
-  const numFields = fields.slice(7, 9);
-  const nonNumField = numFields.find(field => {
-    return field in req.body && typeof req.body[field] !== "number";
-  });
-  if (nonNumField) {
-    return res.status(422).json({
-      code: 422,
-      reason: "ValidationError",
-      message: "Field must be a number",
-      location: nonNumField
-    });
-  }
-
-  // verify number fields is non-zero and non negative
-  const negativeNumInField = numFields.find(field => {
-    return field in req.body && req.body[field] <= 0;
-  });
-  if (negativeNumInField) {
-    return res.status(422).json({
-      code: 422,
-      reasond: "ValidationError",
-      message: "Field must be greater than 0",
-      location: negativeNumInField
-    });
-  }
-
-  return Class.create({
-    type,
-    length,
-    postedBy,
-    wage,
-    datePosted,
-    classDateDay,
-    classDateTime,
-    startDate,
-    description
-  }).then(_class => res.status(201).json(_class));
 });
 
 module.exports = { router, jwtAuth };
