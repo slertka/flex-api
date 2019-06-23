@@ -99,6 +99,119 @@ router.put("/class/:classId", jwtAuth, (req, res) => {
     });
 });
 
+// edit class listing
+router.put("/edit/:classId", jwtAuth, (req, res) => {
+  const classId = req.params.classId;
+
+  const {
+    type,
+    length,
+    wage,
+    classDateDay,
+    classDateTime,
+    startDate,
+    description
+  } = req.body;
+
+  // verify other fields are not in request body to be updated --> don't need to do this bc i explicity class? should i set this up differently
+
+  const fields = [
+    "type",
+    "classDateDay",
+    "classDateTime",
+    "startDate",
+    "description",
+    "length",
+    "wage"
+  ];
+
+  // check all fields are in request body
+  const missingField = fields.find(field => {
+    return !(field in req.body);
+  });
+  if (missingField) {
+    return res.status(244).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Missing field in request body to complete request",
+      location: missingField
+    });
+  }
+
+  // verify fields that are string types
+  const stringFields = fields.slice(0, 5);
+  const nonStringField = stringFields.find(field => {
+    return field in req.body && typeof req.body[field] !== "string";
+  });
+  if (nonStringField) {
+    return res.status(244).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Field must be a string",
+      location: nonStringField
+    });
+  }
+
+  // verify fields that are number types
+  const numFields = fields.slice(5, 7);
+  const nonNumField = numFields.find(field => {
+    return field in req.body && typeof req.body[field] !== "number";
+  });
+  if (nonNumField) {
+    return res.status(422).json({
+      code: 422,
+      reason: "ValidationError",
+      message: "Field must be a number",
+      location: nonNumField
+    });
+  }
+
+  // verify number fields is non-zero and non negative
+  const negativeNumInField = numFields.find(field => {
+    return field in req.body && req.body[field] <= 0;
+  });
+  if (negativeNumInField) {
+    return res.status(422).json({
+      code: 422,
+      reasond: "ValidationError",
+      message: "Field must be greater than 0",
+      location: negativeNumInField
+    });
+  }
+
+  return Class.updateOne(
+    { _id: classId },
+    {
+      $set: {
+        type,
+        length,
+        wage,
+        classDateDay,
+        classDateTime,
+        startDate,
+        description
+      }
+    }
+  )
+    .then(res => {
+      if (res.nModified === 0 && res.n === 0) {
+        return Promise.reject({
+          code: 244,
+          reason: "ValidationError",
+          message: "Document could not be updated"
+        });
+      }
+      return Class.find({ _id: classId });
+    })
+    .then(_class => res.status(201).json(_class))
+    .catch(err => {
+      if (err.reason === "ValidationError") {
+        return res.json(err);
+      }
+      console.log(err);
+    });
+});
+
 router.delete("/class/:classId", jwtAuth, (req, res) => {
   const classId = req.params.classId;
   return Class.deleteOne({ _id: classId }).then(() =>
