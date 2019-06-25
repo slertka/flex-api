@@ -14,12 +14,18 @@ const jwtAuth = passport.authenticate("jwt", { session: false });
 
 // get all classes that an instructor has not yet applied for
 router.get("/classes/:userId", jwtAuth, (req, res) => {
-  const userId = req.params.userId;
-  return Class.find({
+  const userId = req.user._id;
+  console.log(req.user);
+  const { classDateDay } = req.query;
+  const query = {
     userApplied: {
       $nin: userId
     }
-  })
+  };
+  if (classDateDay) {
+    query.classDateDay = classDateDay;
+  }
+  return Class.find(query)
     .sort({ datePosted: -1 })
     .populate("postedBy")
     .then(classes => res.json(classes));
@@ -27,7 +33,7 @@ router.get("/classes/:userId", jwtAuth, (req, res) => {
 
 // get all classes that an instructor has already applied for
 router.get("/applied/:userId", jwtAuth, (req, res) => {
-  const userId = req.params.userId;
+  const userId = req.user._id;
   return Class.find({
     userApplied: {
       $in: userId
@@ -38,7 +44,7 @@ router.get("/applied/:userId", jwtAuth, (req, res) => {
     .then(classes => res.json(classes));
 });
 
-// get classes associated with a user
+// get classes associated with a studio user
 router.get("/studio/:userId", jwtAuth, (req, res) => {
   const userId = req.params.userId;
   return Class.find({ postedBy: userId })
@@ -57,8 +63,7 @@ router.post("/postClass", jwtAuth, (req, res) => {
     classDateTime,
     startDate,
     datePosted,
-    description,
-    postedBy
+    description
   } = req.body;
 
   const fields = [
@@ -67,7 +72,6 @@ router.post("/postClass", jwtAuth, (req, res) => {
     "classDateTime",
     "startDate",
     "description",
-    "postedBy",
     "datePosted",
     "length",
     "wage"
@@ -87,7 +91,7 @@ router.post("/postClass", jwtAuth, (req, res) => {
   }
 
   // verify fields that are string types
-  const stringFields = fields.slice(0, 7);
+  const stringFields = fields.slice(0, 6);
   const nonStringField = stringFields.find(field => {
     return field in req.body && typeof req.body[field] !== "string";
   });
@@ -101,7 +105,7 @@ router.post("/postClass", jwtAuth, (req, res) => {
   }
 
   // verify fields that are number types
-  const numFields = fields.slice(7, 9);
+  const numFields = fields.slice(6, 8);
   const nonNumField = numFields.find(field => {
     return field in req.body && typeof req.body[field] !== "number";
   });
@@ -130,19 +134,22 @@ router.post("/postClass", jwtAuth, (req, res) => {
   return Class.create({
     type,
     length,
-    postedBy,
     wage,
     datePosted,
     classDateDay,
     classDateTime,
     startDate,
-    description
-  }).then(_class => res.status(201).json(_class));
+    description,
+    postedBy: req.user._id
+  }).then(_class => {
+    return res.status(201).json(_class);
+  });
 });
 
 // update document when user(instructor) applies for a class
 router.put("/class/apply/:classId", jwtAuth, (req, res) => {
-  const { userId } = req.body;
+  const userId = req.user._id;
+  console.log(userId);
   const classId = req.params.classId;
 
   // Verify user hasn't already applied to class
@@ -194,7 +201,7 @@ router.put("/class/apply/:classId", jwtAuth, (req, res) => {
 // update document when user(instructor) withdraws from a class
 router.put("/class/withdraw/:classId", jwtAuth, (req, res) => {
   const classId = req.params.classId;
-  const { userId } = req.body;
+  const userId = req.user._id;
 
   return Class.updateOne(
     { _id: classId },
@@ -230,8 +237,6 @@ router.put("/edit/:classId", jwtAuth, (req, res) => {
     startDate,
     description
   } = req.body;
-
-  // verify other fields are not in request body to be updated --> don't need to do this bc i explicity class? should i set this up differently
 
   const fields = [
     "type",
@@ -298,7 +303,7 @@ router.put("/edit/:classId", jwtAuth, (req, res) => {
   }
 
   return Class.updateOne(
-    { _id: classId },
+    { _id: classId, postedBy: req.user._id },
     {
       $set: {
         type,
@@ -332,9 +337,21 @@ router.put("/edit/:classId", jwtAuth, (req, res) => {
 
 router.delete("/class/:classId", jwtAuth, (req, res) => {
   const classId = req.params.classId;
-  return Class.deleteOne({ _id: classId }).then(() =>
-    res.json(`Class ${classId} deleted`)
-  );
+  return Class.deleteOne({
+    _id: classId,
+    postedBy: req.user._id
+  })
+    .then(() =>
+      User.updateMany(
+        { classApplied: classId },
+        {
+          $pull: {
+            classApplied: classId
+          }
+        }
+      )
+    )
+    .then(() => res.json(`Class ${classId} deleted`));
 });
 
 module.exports = { router, jwtAuth };

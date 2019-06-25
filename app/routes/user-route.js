@@ -41,13 +41,14 @@ router.post("/signup", (req, res) => {
 
   // Verify all fields are complete
   const emptyField = fields.find(field => {
-    return !(field in req.body);
+    return req.body[field] === "";
   });
+  console.log(emptyField);
   if (emptyField) {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
-      message: "Missing value in required field",
+      message: "Missing value in required field.",
       location: emptyField
     });
   }
@@ -60,7 +61,7 @@ router.post("/signup", (req, res) => {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
-      message: "Input must be a variable type 'String'",
+      message: "Input must be a variable type 'String'.",
       location: nonStringField
     });
   }
@@ -70,7 +71,7 @@ router.post("/signup", (req, res) => {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
-      message: "User type must be instructor or studio",
+      message: "User type must be instructor or studio.",
       location: "type"
     });
   }
@@ -81,7 +82,7 @@ router.post("/signup", (req, res) => {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
-      message: "Invalid email entered",
+      message: "Invalid email entered.",
       location: "email"
     });
   }
@@ -94,7 +95,7 @@ router.post("/signup", (req, res) => {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
-      message: "Cannot start or end with whitespace",
+      message: "Cannot start or end with whitespace.",
       location: nonStringField
     });
   }
@@ -121,12 +122,12 @@ router.post("/signup", (req, res) => {
       code: 422,
       reason: "ValidationError",
       message: fieldTooSmall
-        ? `Must be at least ${
+        ? `Password must be at least ${
             requiredLengths[fieldTooSmall].min
-          } character(s) long`
-        : `Must be less than ${
+          } character(s) long.`
+        : `Password must be less than ${
             requiredLengths[fieldTooLarge].max
-          } characters long`,
+          } characters long.`,
       location: fieldTooSmall || fieldTooLarge
     });
   }
@@ -136,7 +137,7 @@ router.post("/signup", (req, res) => {
     return res.status(422).json({
       code: 422,
       reason: "ValidationError",
-      message: "Passwords do not match",
+      message: "Passwords do not match.",
       location: "password"
     });
   }
@@ -147,7 +148,7 @@ router.post("/signup", (req, res) => {
         return Promise.reject({
           code: 422,
           reason: "ValidationError",
-          message: "Email already registered with an account",
+          message: "Email already registered with an account.",
           location: "email"
         });
       }
@@ -181,6 +182,7 @@ router.post("/signup", (req, res) => {
 
 const localAuth = passport.authenticate("local", { session: false });
 router.post("/login", localAuth, (req, res) => {
+  console.log("login", req.user);
   const jwt = createAuthToken(req.user);
   return res.json({ jwt, user: req.user });
 });
