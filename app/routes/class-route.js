@@ -15,16 +15,42 @@ const jwtAuth = passport.authenticate("jwt", { session: false });
 // get all classes that an instructor has not yet applied for
 router.get("/classes/:userId", jwtAuth, (req, res) => {
   const userId = req.user._id;
-  console.log(req.user);
-  const { classDateDay } = req.query;
+  const { type } = req.query;
+
+  // initialize query
+  // find classes where user has not yet applied
   const query = {
     userApplied: {
       $nin: userId
     }
   };
-  if (classDateDay) {
-    query.classDateDay = classDateDay;
+
+  // add type of yoga to query
+  if (req.query.type) {
+    query.type = type;
   }
+
+  // determine which days to add to query
+  let queryDays = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday"
+  ];
+  let classDateDayArray = [];
+  queryDays.forEach(day => {
+    if (req.query[day]) {
+      return classDateDayArray.push({ classDateDay: day });
+    }
+  });
+  // update query for multiple values for classDateDay
+  if (classDateDayArray.length > 0) {
+    query.$or = classDateDayArray;
+  }
+
   return Class.find(query)
     .sort({ datePosted: -1 })
     .populate("postedBy")
