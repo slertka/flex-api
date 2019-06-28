@@ -43,7 +43,6 @@ router.post("/signup", (req, res) => {
   const emptyField = fields.find(field => {
     return req.body[field] === "";
   });
-  console.log(emptyField);
   if (emptyField) {
     return res.status(422).json({
       code: 422,
@@ -183,7 +182,6 @@ router.post("/signup", (req, res) => {
 
 const localAuth = passport.authenticate("local", { session: false });
 router.post("/login", localAuth, (req, res) => {
-  console.log("login", req.user);
   const jwt = createAuthToken(req.user);
   return res.json({ jwt, user: req.user });
 });

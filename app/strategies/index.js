@@ -41,10 +41,8 @@ const jwtStrategy = new JwtStrategy(
     algorithms: ["HS256"]
   },
   (payload, done) => {
-    console.log("strat", payload);
     done(null, payload.payload);
   }
 );
-console.log("strat", JWT_SECRET);
 
 module.exports = { localStrategy, jwtStrategy };

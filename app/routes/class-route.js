@@ -175,7 +175,6 @@ router.post("/postClass", jwtAuth, (req, res) => {
 // update document when user(instructor) applies for a class
 router.put("/class/apply/:classId", jwtAuth, (req, res) => {
   const userId = req.user._id;
-  console.log(userId);
   const classId = req.params.classId;
 
   // Verify user hasn't already applied to class
