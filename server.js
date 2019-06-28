@@ -33,6 +33,10 @@ const { router: userRouter } = require("./app/routes/user-route");
 app.use("/api/user", userRouter);
 const { router: classRouter } = require("./app/routes/class-route");
 app.use("/api/dashboard", classRouter);
+app.use((error, req, res, next) => {
+  console.log(error);
+  next();
+});
 
 // Initialize Server
 let server;
