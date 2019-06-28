@@ -173,6 +173,7 @@ router.post("/signup", (req, res) => {
       });
     })
     .catch(err => {
+      console.log(err);
       if (err.reason == "ValidationError") {
         return res.status(err.code).json(err);
       }

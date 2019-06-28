@@ -1,3 +1,4 @@
+require("dotenv").config();
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const jwt = require("jsonwebtoken");
@@ -97,35 +98,36 @@ describe("/api/user/login", () => {
   });
 });
 
-// describe("/api/user/auth/refresh", () => {
-//   before(() => {
-//     return runServer(TEST_DATABASE_URL);
-//   });
+describe("/api/user/auth/refresh", () => {
+  before(() => {
+    return runServer(TEST_DATABASE_URL);
+  });
 
-//   after(() => {
-//     return closeServer();
-//   });
+  after(() => {
+    return closeServer();
+  });
 
-//   afterEach(() => {
-//     return User.deleteMany();
-//   });
+  afterEach(() => {
+    return User.deleteMany();
+  });
 
-//   describe("POST", () => {
-//     it("should generate a refresh authToken", () => {
-//       const authToken = jwt.sign("test", JWT_SECRET, {
-//         expiresIn: JWT_EXPIRY,
-//         algorithm: "HS256"
-//       });
-//       console.log(authToken);
+  describe("POST", () => {
+    it("should generate a refresh authToken", () => {
+      console.log(JWT_SECRET, JWT_EXPIRY);
+      const authToken = jwt.sign({ payload: "test" }, JWT_SECRET, {
+        expiresIn: JWT_EXPIRY,
+        algorithm: "HS256"
+      });
+      console.log(authToken);
 
-//       // return chai
-//       //   .request(app)
-//       //   .post("/api/user/auth/refresh")
-//       //   .send(jwt)
-//       //   .then(res => {
-//       //     console.log(res.body);
-//       //     expect(res).to.have.status(200);
-//       //   });
-//     });
-//   });
-// });
+      return chai
+        .request(app)
+        .post("/api/user/auth/refresh")
+        .set("Authorization", `Bearer ${authToken}`)
+        .then(res => {
+          console.log(res.body);
+          expect(res).to.have.status(200);
+        });
+    });
+  });
+});
